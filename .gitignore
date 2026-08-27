@@ -4,3 +4,7 @@ __pycache__/
 .env
 
 logs/
+
+eval/images/
+eval/truth/
+eval/outputs/
