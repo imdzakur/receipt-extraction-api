@@ -1,7 +1,8 @@
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from starlette.concurrency import run_in_threadpool
 
-from app.llm import extract_text_from_image
+from app.llm import extract_receipt
+from app.validation import check_arithmetic
 
 ALLOWED_MIME = {"image/jpeg", "image/png"}
 MAX_FILE_BYTES = 10 * 1024 * 1024
@@ -31,13 +32,14 @@ async def extract(file: UploadFile = File(...)) -> dict[str, object]:
         )
 
     try:
-        text, usage = await run_in_threadpool(
-            extract_text_from_image, contents, file.content_type
+        receipt, usage = await run_in_threadpool(
+            extract_receipt, contents, file.content_type
         )
-    except Exception as exc:
-        raise HTTPException(
-            status_code=502,
-            detail=f"Gagal memanggil model: {exc}",
-        ) from exc
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"Gagal ekstraksi: {e}")
 
-    return {"text": text, "usage": usage}
+    return {
+        "data": receipt,
+        "validation": check_arithmetic(receipt),
+        "usage": usage,
+    }
